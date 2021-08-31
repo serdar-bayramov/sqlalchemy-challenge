@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import datetime as dt
+from datetime import datetime
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -58,7 +60,7 @@ def precipitation():
         prcp_list.append(prcp_dict)
     return jsonify(prcp_list)
 
-# create route to retun station names
+# create route to return station names
 @app.route("/api/v1.0/stations")
 def station():
     session=Session(engine)
@@ -70,6 +72,24 @@ def station():
         station_list.append([name for name in names])
     return jsonify(station_list)
 
+# create route to return temp observations
+@app.route("/api/v1.0/tobs")
+def temperature():
+    session=Session(engine)
+
+    last_date=session.query(Measurement.date).group_by(Measurement.date).order_by((Measurement.date).desc()).first()
+    last_date=last_date.date
+    last_year = datetime.strptime(last_date, '%Y-%m-%d') - dt.timedelta(days=365)
+    temp_observation = session.query(Measurement.date,Measurement.tobs).filter(Measurement.date>last_year).filter(Measurement.station=='USC00519281').all()
+    session.close()
+
+    temp_list = []
+    for date, temp in temp_observation:
+        temp_dict={}
+        temp_dict['date']=date
+        temp_dict['temp']=temp
+        temp_list.append(temp_dict)
+    return jsonify(temp_list)
 
 if __name__ == '__main__':
     app.run(debug=True)
