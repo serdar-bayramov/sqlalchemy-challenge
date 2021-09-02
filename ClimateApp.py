@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import datetime as dt
-from datetime import datetime
+from datetime import date, datetime
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -83,13 +83,35 @@ def temperature():
     temp_observation = session.query(Measurement.date,Measurement.tobs).filter(Measurement.date>last_year).filter(Measurement.station=='USC00519281').all()
     session.close()
 
-    temp_list = []
-    for date, temp in temp_observation:
-        temp_dict={}
-        temp_dict['date']=date
-        temp_dict['temp']=temp
-        temp_list.append(temp_dict)
-    return jsonify(temp_list)
+    tobss = list(np.ravel(temp_observation))
+    return jsonify(tobss)
+
+@app.route("/api/v1.0/<start>")
+def tobs(start):
+    
+    session=Session(engine)
+    
+    start_date = dt.datetime.strptime(start, '%Y-%m-%d')
+        
+    tobs_start = session.query(func.min(Measurement.tobs),func.avg(Measurement.tobs),func.max(Measurement.tobs)).\
+        filter(Measurement.date>=start_date).all()
+    
+    session.close()
+    tobs_list = list(np.ravel(tobs_start))
+    return jsonify(tobs_list)
+
+@app.route("/api/v1.0/<start>/<end>")
+def tobs1(start,end):
+    session=Session(engine)
+
+    start_date = dt.datetime.strptime(start, '%Y-%m-%d')
+    end_date = dt.datetime.strptime(end, '%Y-%m-%d')
+
+    tobs_start_end = (session.query(func.min(Measurement.tobs),func.avg(Measurement.tobs),
+                      func.max(Measurement.tobs)).filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all())
+    session.close()
+    tobs_list1 = list(np.ravel(tobs_start_end))
+    return jsonify(tobs_list1)
 
 if __name__ == '__main__':
     app.run(debug=True)
