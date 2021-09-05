@@ -72,7 +72,7 @@ def station():
         station_list.append([name for name in names])
     return jsonify(station_list)
 
-# create route to return temp observations
+# create routes to return temp observations
 @app.route("/api/v1.0/tobs")
 def temperature():
     session=Session(engine)
